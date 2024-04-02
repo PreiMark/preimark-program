@@ -1,4 +1,5 @@
-pub mod sell_order;
-pub use sell_order::*;
-pub mod buy_order;
-pub use buy_order::*;
+pub mod retailer;
+pub use retailer::*;
+
+pub mod order;
+pub use order::*;

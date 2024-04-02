@@ -3,7 +3,7 @@ export type ExchangeMarket = {
   "name": "exchange_market",
   "instructions": [
     {
-      "name": "initializeRetailer",
+      "name": "initializeOffer",
       "accounts": [
         {
           "name": "authority",
@@ -36,11 +36,6 @@ export type ExchangeMarket = {
           "isSigner": false
         },
         {
-          "name": "askMint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
@@ -67,7 +62,7 @@ export type ExchangeMarket = {
           "type": "u64"
         },
         {
-          "name": "bidPrice",
+          "name": "bidPoint",
           "type": "u64"
         },
         {
@@ -77,15 +72,6 @@ export type ExchangeMarket = {
         {
           "name": "endTime",
           "type": "i64"
-        },
-        {
-          "name": "metadata",
-          "type": {
-            "array": [
-              "u8",
-              32
-            ]
-          }
         }
       ]
     },
@@ -150,84 +136,14 @@ export type ExchangeMarket = {
       ],
       "args": [
         {
-          "name": "bidAmount",
+          "name": "askPoint",
           "type": "u64"
         },
         {
-          "name": "bidPrice",
+          "name": "askAmount",
           "type": "u64"
-        },
-        {
-          "name": "metadata",
-          "type": {
-            "array": [
-              "u8",
-              32
-            ]
-          }
         }
       ]
-    },
-    {
-      "name": "approveOrder",
-      "accounts": [
-        {
-          "name": "authority",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "retailer",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "treasurer",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "order",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "bidMint",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "bidTreasury",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "bidTokenAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "associatedTokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "rent",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": []
     },
     {
       "name": "claim",
@@ -263,7 +179,68 @@ export type ExchangeMarket = {
           "isSigner": false
         },
         {
-          "name": "bidTokenAccount",
+          "name": "sellerTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "collect",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "treasurer",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "retailer",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "order",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "askMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "askTreasury",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "askTokenAccount",
           "isMut": true,
           "isSigner": false
         },
@@ -306,30 +283,17 @@ export type ExchangeMarket = {
             "type": "publicKey"
           },
           {
-            "name": "bidPrice",
+            "name": "askPoint",
             "type": "u64"
           },
           {
-            "name": "bidAmount",
+            "name": "askAmount",
             "type": "u64"
-          },
-          {
-            "name": "lockTime",
-            "type": "i64"
           },
           {
             "name": "state",
             "type": {
               "defined": "OrderState"
-            }
-          },
-          {
-            "name": "metadata",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
             }
           }
         ]
@@ -357,15 +321,7 @@ export type ExchangeMarket = {
             "type": "u64"
           },
           {
-            "name": "bidPrice",
-            "type": "u64"
-          },
-          {
-            "name": "bidReserve",
-            "type": "u64"
-          },
-          {
-            "name": "askReceived",
+            "name": "bidPoint",
             "type": "u64"
           },
           {
@@ -375,15 +331,6 @@ export type ExchangeMarket = {
           {
             "name": "endTime",
             "type": "i64"
-          },
-          {
-            "name": "metadata",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
           }
         ]
       }
@@ -445,23 +392,13 @@ export type ExchangeMarket = {
     },
     {
       "code": 6005,
-      "name": "NotApproved",
-      "msg": "Order isn't not approved yet!"
+      "name": "NotActive",
+      "msg": "State is not active!"
     },
     {
       "code": 6006,
-      "name": "InvalidOrderState",
-      "msg": "Invalid Order state!"
-    },
-    {
-      "code": 6007,
-      "name": "NotUnlocked",
-      "msg": "Order isn't not unlocked yet!"
-    },
-    {
-      "code": 6008,
-      "name": "NotActive",
-      "msg": "State is not active!"
+      "name": "InsufficientFunds",
+      "msg": "insufficient funds"
     }
   ]
 };
@@ -471,7 +408,7 @@ export const IDL: ExchangeMarket = {
   "name": "exchange_market",
   "instructions": [
     {
-      "name": "initializeRetailer",
+      "name": "initializeOffer",
       "accounts": [
         {
           "name": "authority",
@@ -504,11 +441,6 @@ export const IDL: ExchangeMarket = {
           "isSigner": false
         },
         {
-          "name": "askMint",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
@@ -535,7 +467,7 @@ export const IDL: ExchangeMarket = {
           "type": "u64"
         },
         {
-          "name": "bidPrice",
+          "name": "bidPoint",
           "type": "u64"
         },
         {
@@ -545,15 +477,6 @@ export const IDL: ExchangeMarket = {
         {
           "name": "endTime",
           "type": "i64"
-        },
-        {
-          "name": "metadata",
-          "type": {
-            "array": [
-              "u8",
-              32
-            ]
-          }
         }
       ]
     },
@@ -618,84 +541,14 @@ export const IDL: ExchangeMarket = {
       ],
       "args": [
         {
-          "name": "bidAmount",
+          "name": "askPoint",
           "type": "u64"
         },
         {
-          "name": "bidPrice",
+          "name": "askAmount",
           "type": "u64"
-        },
-        {
-          "name": "metadata",
-          "type": {
-            "array": [
-              "u8",
-              32
-            ]
-          }
         }
       ]
-    },
-    {
-      "name": "approveOrder",
-      "accounts": [
-        {
-          "name": "authority",
-          "isMut": true,
-          "isSigner": true
-        },
-        {
-          "name": "retailer",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "treasurer",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "order",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "bidMint",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "bidTreasury",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "bidTokenAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "systemProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "tokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "associatedTokenProgram",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "rent",
-          "isMut": false,
-          "isSigner": false
-        }
-      ],
-      "args": []
     },
     {
       "name": "claim",
@@ -731,7 +584,68 @@ export const IDL: ExchangeMarket = {
           "isSigner": false
         },
         {
-          "name": "bidTokenAccount",
+          "name": "sellerTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "rent",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "collect",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "treasurer",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "retailer",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "order",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "askMint",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "askTreasury",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "askTokenAccount",
           "isMut": true,
           "isSigner": false
         },
@@ -774,30 +688,17 @@ export const IDL: ExchangeMarket = {
             "type": "publicKey"
           },
           {
-            "name": "bidPrice",
+            "name": "askPoint",
             "type": "u64"
           },
           {
-            "name": "bidAmount",
+            "name": "askAmount",
             "type": "u64"
-          },
-          {
-            "name": "lockTime",
-            "type": "i64"
           },
           {
             "name": "state",
             "type": {
               "defined": "OrderState"
-            }
-          },
-          {
-            "name": "metadata",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
             }
           }
         ]
@@ -825,15 +726,7 @@ export const IDL: ExchangeMarket = {
             "type": "u64"
           },
           {
-            "name": "bidPrice",
-            "type": "u64"
-          },
-          {
-            "name": "bidReserve",
-            "type": "u64"
-          },
-          {
-            "name": "askReceived",
+            "name": "bidPoint",
             "type": "u64"
           },
           {
@@ -843,15 +736,6 @@ export const IDL: ExchangeMarket = {
           {
             "name": "endTime",
             "type": "i64"
-          },
-          {
-            "name": "metadata",
-            "type": {
-              "array": [
-                "u8",
-                32
-              ]
-            }
           }
         ]
       }
@@ -913,23 +797,13 @@ export const IDL: ExchangeMarket = {
     },
     {
       "code": 6005,
-      "name": "NotApproved",
-      "msg": "Order isn't not approved yet!"
+      "name": "NotActive",
+      "msg": "State is not active!"
     },
     {
       "code": 6006,
-      "name": "InvalidOrderState",
-      "msg": "Invalid Order state!"
-    },
-    {
-      "code": 6007,
-      "name": "NotUnlocked",
-      "msg": "Order isn't not unlocked yet!"
-    },
-    {
-      "code": 6008,
-      "name": "NotActive",
-      "msg": "State is not active!"
+      "name": "InsufficientFunds",
+      "msg": "insufficient funds"
     }
   ]
 };

@@ -7,9 +7,11 @@ import {
   AnchorProvider,
   IdlAccounts,
   Spl,
+  workspace,
 } from '@project-serum/anchor'
 
-import { IDL, ExchangeMarket } from './../target/types/exchange_market'
+import { ExchangeMarket } from './../target/types/exchange_market'
+import { InitializeOrder, InitializeOffer, OrderAction } from './types'
 
 const PROGRAM_ACCOUNTS = {
   rent: web3.SYSVAR_RENT_PUBKEY,
@@ -21,16 +23,10 @@ const PROGRAM_ACCOUNTS = {
 export type RetailerData = IdlAccounts<ExchangeMarket>['retailer']
 export type OrderData = IdlAccounts<ExchangeMarket>['order']
 
-const METADATA_SIZE = 32
-
 class ExchangeProgram {
   readonly program: Program<ExchangeMarket>
   constructor(readonly provider: AnchorProvider, readonly programId: string) {
-    this.program = new Program<ExchangeMarket>(
-      IDL,
-      this.programId,
-      this.provider,
-    )
+    this.program = workspace.ExchangeMarket as Program<ExchangeMarket>
   }
 
   get walletPubkey() {
@@ -55,17 +51,6 @@ class ExchangeProgram {
     return Spl.token(this.provider)
   }
 
-  validMetadata = (metadata?: Buffer | Uint8Array | number[]) => {
-    if (!metadata) {
-      const defaultMetadata = []
-      for (let i = 0; i < METADATA_SIZE; i++) defaultMetadata.push(0)
-      return defaultMetadata
-    }
-    if (metadata.length !== METADATA_SIZE)
-      throw new Error('Invalid metadata path')
-    return Array.from(metadata)
-  }
-
   deriveTreasurerAddress = async (ownerAddress: Address) => {
     if (typeof ownerAddress !== 'string') ownerAddress = ownerAddress.toBase58()
     const ownerPubkey = new web3.PublicKey(ownerAddress)
@@ -76,7 +61,7 @@ class ExchangeProgram {
     return treasurer
   }
 
-  generateWalletPDAs = async (params: {
+  private generateWalletPDAs = async (params: {
     bidMint: Address
     askMint: Address
   }) => {
@@ -99,7 +84,7 @@ class ExchangeProgram {
     }
   }
 
-  generateRetailerPDAs = async (params: {
+  private generateRetailerPDAs = async (params: {
     retailer: Address
     bidMint: Address
     askMint: Address
@@ -113,150 +98,93 @@ class ExchangeProgram {
       mint: bidMint,
       owner: treasurer,
     })
+    const askTreasury = await utils.token.associatedAddress({
+      mint: askMint,
+      owner: treasurer,
+    })
     return {
       retailer,
       treasurer,
       bidMint,
       askMint,
       bidTreasury,
-    }
-  }
-
-  generateOrderPDAs = async (params: {
-    order: Address
-    bidMint: Address
-    askMint: Address
-  }) => {
-    const order = new web3.PublicKey(params.order)
-    const bidMint = new web3.PublicKey(params.bidMint)
-    const askMint = new web3.PublicKey(params.askMint)
-
-    // Retailer Accounts
-    const treasurer = await this.deriveTreasurerAddress(order)
-    const askTreasury = await utils.token.associatedAddress({
-      mint: askMint,
-      owner: treasurer,
-    })
-    return {
-      order,
-      treasurer,
-      bidMint,
-      askMint,
       askTreasury,
     }
   }
 
-  generateAccountsWithOrder = async (order: Address) => {
-    const { retailer } = await this.account.order.fetch(order)
+  private generateAccounts = async (order: Address, retailer?: Address) => {
+    if (!retailer) {
+      const orderData = await this.account.order.fetch(order)
+      retailer = orderData.retailer
+    }
     const { askMint, bidMint } = await this.account.retailer.fetch(retailer)
     const retailerPDAs = await this.generateRetailerPDAs({
       askMint,
       bidMint,
       retailer,
     })
-    const orderPDAs = await this.generateOrderPDAs({
-      askMint,
-      bidMint,
-      order: order,
-    })
+
     const walletPDAs = await this.generateWalletPDAs({
       askMint,
       bidMint,
     })
     return {
-      ...orderPDAs,
+      order: new web3.PublicKey(order),
       ...walletPDAs,
       ...retailerPDAs,
       ...PROGRAM_ACCOUNTS,
     }
   }
 
-  getRetailerReserve = async (retailer: Address) => {
-    const { bidMint, askMint } = await this.account.retailer.fetch(retailer)
-    const treasurer = await this.deriveTreasurerAddress(retailer)
-    const bidTreasury = await utils.token.associatedAddress({
-      mint: bidMint,
-      owner: treasurer,
-    })
-    const askTreasury = await utils.token.associatedAddress({
-      mint: askMint,
-      owner: treasurer,
-    })
-    const tokenAccounts = await this.splProgram.account.token.fetchMultiple([
-      bidTreasury,
-      askTreasury,
-    ])
-    return tokenAccounts.map((e: any) => e?.amount?.toString())
-  }
-
-  getOrderReserve = async (order: Address) => {
-    const { retailer } = await this.account.order.fetch(order)
-    const { bidMint, askMint } = await this.account.retailer.fetch(retailer)
-    const treasurer = await this.deriveTreasurerAddress(order)
-    const bidTreasury = await utils.token.associatedAddress({
-      mint: bidMint,
-      owner: treasurer,
-    })
-    const askTreasury = await utils.token.associatedAddress({
-      mint: askMint,
-      owner: treasurer,
-    })
-    const tokenAccounts = await this.splProgram.account.token.fetchMultiple([
-      bidTreasury,
-      askTreasury,
-    ])
-    return tokenAccounts.map((e: any) => e?.amount?.toString())
-  }
-
-  parseRetailerData = (data: Buffer): RetailerData => {
-    return this.program.coder.accounts.decode('retailer', data)
-  }
-
-  initializeRetailer = async ({
+  /**
+   * @param retailer: Retailer keypair if needed
+   * @returns
+   */
+  initializeOffer = async ({
     bidMint,
     askMint,
     bidTotal,
-    bidPrice,
+    bidPoint,
     startAfter = new BN(0),
     endAfter = new BN(0),
     sendAndConfirm = true,
-    metadata,
     retailer = web3.Keypair.generate(),
-  }: {
-    bidMint: Address
-    askMint: Address
-    bidTotal: BN
-    bidPrice: BN
-    startAfter?: BN
-    endAfter?: BN
-    metadata?: Buffer | Uint8Array | number[]
-    sendAndConfirm?: boolean
-    retailer?: web3.Keypair
-  }) => {
-    const retailerPDAs = await this.generateRetailerPDAs({
+  }: InitializeOffer) => {
+    const {
+      bidTreasury,
+      bidMint: _bidMint,
+      treasurer,
+      retailer: _retailer,
+    } = await this.generateRetailerPDAs({
       retailer: retailer.publicKey,
       askMint,
       bidMint,
     })
-    const walletPDAs = await this.generateWalletPDAs({
+    const { authority, bidTokenAccount } = await this.generateWalletPDAs({
       askMint,
       bidMint,
     })
+    console.log('zo ne')
+    console.log('authority', authority)
+    console.log('_retailer', _retailer)
+    console.log('treasurer', treasurer)
+    console.log('_bidMint', _bidMint)
+    console.log('bidTreasury', bidTreasury)
+    console.log('bidTokenAccount', bidTokenAccount)
     const tx = await this.program.methods
-      .initializeRetailer(
-        bidTotal,
-        bidPrice,
-        startAfter,
-        endAfter,
-        this.validMetadata(metadata),
-      )
+      .initializeOffer(bidTotal, bidPoint, startAfter, endAfter)
       .accounts({
-        ...retailerPDAs,
-        ...walletPDAs,
+        authority,
+        retailer: _retailer,
+        treasurer,
+        bidMint: _bidMint,
+        bidTreasury,
+        bidTokenAccount,
         ...PROGRAM_ACCOUNTS,
       })
       .transaction()
 
+    console.log('pass', tx)
     let txId = ''
     if (sendAndConfirm) {
       txId = await this.provider.sendAndConfirm(tx, [retailer])
@@ -264,41 +192,25 @@ class ExchangeProgram {
     return { txId, tx }
   }
 
+  /**
+   * @param retailer: Retailer address
+   * @returns
+   */
   initializeOrder = async ({
     retailer,
-    bidAmount,
-    bidPrice,
-    metadata,
+    askPoint,
+    askAmount,
     sendAndConfirm = true,
     order = web3.Keypair.generate(),
-  }: {
-    retailer: web3.PublicKey
-    bidAmount: BN
-    bidPrice: BN
-    metadata?: Buffer | Uint8Array | number[]
-    sendAndConfirm?: boolean
-    order?: web3.Keypair
-  }) => {
-    const { askMint, bidMint } = await this.account.retailer.fetch(retailer)
-    const orderPDAs = await this.generateOrderPDAs({
-      askMint,
-      bidMint,
-      order: order.publicKey,
-    })
-    const walletPDAs = await this.generateWalletPDAs({
-      askMint,
-      bidMint,
-    })
-    const tx = await this.program.methods
-      .initializeOrder(bidAmount, bidPrice, this.validMetadata(metadata))
-      .accounts({
-        retailer,
-        ...orderPDAs,
-        ...walletPDAs,
-        ...PROGRAM_ACCOUNTS,
-      })
-      .transaction()
+  }: InitializeOrder) => {
+    // Build transaction
+    const accounts = await this.generateAccounts(order.publicKey, retailer)
 
+    const tx = await this.program.methods
+      .initializeOrder(askPoint, askAmount)
+      .accounts(accounts)
+      .transaction()
+    // Send transaction if needed
     let txId = ''
     if (sendAndConfirm) {
       txId = await this.provider.sendAndConfirm(tx, [order])
@@ -306,19 +218,18 @@ class ExchangeProgram {
     return { txId, tx }
   }
 
-  approveOrder = async ({
-    order,
-    sendAndConfirm = true,
-  }: {
-    order: web3.PublicKey
-    sendAndConfirm?: boolean
-  }) => {
-    const accounts = await this.generateAccountsWithOrder(order)
+  /**
+   * @param order: Order Address
+   * @returns
+   */
+  claim = async ({ order, sendAndConfirm = true }: OrderAction) => {
+    // Build transaction
+    const accounts = await this.generateAccounts(order)
     const tx = await this.program.methods
-      .approveOrder()
+      .claim()
       .accounts(accounts)
       .transaction()
-
+    // Send transaction if needed
     let txId = ''
     if (sendAndConfirm) {
       txId = await this.provider.sendAndConfirm(tx, [])
@@ -326,19 +237,18 @@ class ExchangeProgram {
     return { txId, tx }
   }
 
-  claim = async ({
-    order,
-    sendAndConfirm = true,
-  }: {
-    order: web3.PublicKey
-    sendAndConfirm?: boolean
-  }) => {
-    const accounts = await this.generateAccountsWithOrder(order)
+  /**
+   * @param order: Order Address
+   * @returns
+   */
+  collectOrder = async ({ order, sendAndConfirm = true }: OrderAction) => {
+    // Build transaction
+    const accounts = await this.generateAccounts(order)
     const tx = await this.program.methods
-      .claim()
+      .collect()
       .accounts(accounts)
       .transaction()
-
+    // Send transaction if needed
     let txId = ''
     if (sendAndConfirm) {
       txId = await this.provider.sendAndConfirm(tx, [])

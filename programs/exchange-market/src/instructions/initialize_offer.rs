@@ -5,12 +5,12 @@ use anchor_lang::prelude::*;
 use anchor_spl::{associated_token, token};
 
 #[derive(Accounts)]
-pub struct InitializeSellOrder<'info> {
+pub struct InitializeOffer<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
-    #[account(init, payer = authority, space = SellOrder::LEN)]
-    pub sell_order: Account<'info, SellOrder>,
-    #[account(seeds = [b"treasurer", &sell_order.key().to_bytes()], bump)]
+    #[account(init, payer = authority, space = Retailer::LEN)]
+    pub retailer: Account<'info, Retailer>,
+    #[account(seeds = [b"treasurer", &retailer.key().to_bytes()], bump)]
     /// CHECK: Just a pure account
     pub treasurer: AccountInfo<'info>,
 
@@ -18,14 +18,14 @@ pub struct InitializeSellOrder<'info> {
     #[account(mut)]
     pub bid_mint: Account<'info, token::Mint>,
     #[account(
-    init,
+    init_if_needed,
     payer = authority,
     associated_token::mint = bid_mint,
     associated_token::authority = treasurer
   )]
     pub bid_treasury: Box<Account<'info, token::TokenAccount>>,
     #[account(
-    init,
+    init_if_needed,
     payer = authority,
     associated_token::mint = bid_mint,
     associated_token::authority = authority
@@ -40,42 +40,38 @@ pub struct InitializeSellOrder<'info> {
 }
 
 pub fn exec(
-    ctx: Context<InitializeSellOrder>,
+    ctx: Context<InitializeOffer>,
     bid_total: u64,
-    bid_received: u64,
+    bid_point: u64,
     start_after: i64,
     end_after: i64,
 ) -> Result<()> {
     let current_time = current_timestamp().ok_or(ErrorCode::InvalidCurrentDate)?;
-    let seller = &mut ctx.accounts.sell_order;
-    seller.authority = ctx.accounts.authority.key();
-    // seller.bid_mint = ctx.accounts.bid_mint.key();
-    seller.bid_mint = ctx.accounts.bid_mint.key();
+    let retailer = &mut ctx.accounts.retailer;
+    retailer.authority = ctx.accounts.authority.key();
+    retailer.bid_mint = ctx.accounts.bid_mint.key();
 
-    // Initialize seller's info
-    // seller.bid_total = 0;
-    // seller.bid_reserve = 0;
-    // seller.bid_price = bid_price;
+    // Initialize retailer's info
+    retailer.bid_total += 0;
+    retailer.bid_point += 0;
 
-    seller.bid_received = 0;
-    seller.bid_total = bid_total;
-
-    seller.start_time = current_time + start_after;
-    seller.end_time = current_time + end_after;
-
+    retailer.start_time = current_time + start_after;
+    retailer.end_time = current_time + end_after;
+    // Never End
     if end_after == 0 {
-        seller.end_time = 0;
+        retailer.end_time = 0;
     }
 
-    seller.deposit(
-        bid_received,
-        ctx.accounts.token_program.to_account_info(),
-        token::Transfer {
-            from: ctx.accounts.bid_token_account.to_account_info(),
-            to: ctx.accounts.bid_treasury.to_account_info(),
-            authority: ctx.accounts.authority.to_account_info(),
-        },
-    )?;
+    // retailer.deposit(
+    //     bid_total,
+    //     bid_point,
+    //     ctx.accounts.token_program.to_account_info(),
+    //     token::Transfer {
+    //         from: ctx.accounts.bid_token_account.to_account_info(),
+    //         to: ctx.accounts.bid_treasury.to_account_info(),
+    //         authority: ctx.accounts.authority.to_account_info(),
+    //     },
+    // )?;
 
     Ok(())
 }
