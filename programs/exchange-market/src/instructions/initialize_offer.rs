@@ -10,13 +10,13 @@ pub struct InitializeOffer<'info> {
     pub authority: Signer<'info>,
     #[account(init, payer = authority, space = Retailer::LEN)]
     pub retailer: Account<'info, Retailer>,
-    #[account(seeds = [b"treasurer", &retailer.key().to_bytes()], bump)]
     /// CHECK: Just a pure account
+    #[account(seeds = [b"treasurer", &retailer.key().to_bytes()], bump)]
     pub treasurer: AccountInfo<'info>,
 
-    // Bid info
+    // token muon buy/sell
     #[account(mut)]
-    pub bid_mint: Account<'info, token::Mint>,
+    pub bid_mint: Box<Account<'info, token::Mint>>,
     #[account(
     init_if_needed,
     payer = authority,

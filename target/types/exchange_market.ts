@@ -349,9 +349,6 @@ export type ExchangeMarket = {
             "name": "Open"
           },
           {
-            "name": "Approved"
-          },
-          {
             "name": "Done"
           },
           {
@@ -752,9 +749,6 @@ export const IDL: ExchangeMarket = {
           },
           {
             "name": "Open"
-          },
-          {
-            "name": "Approved"
           },
           {
             "name": "Done"

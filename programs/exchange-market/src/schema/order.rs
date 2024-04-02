@@ -8,7 +8,6 @@ use anchor_spl::token;
 pub enum OrderState {
     Uninitialized,
     Open,
-    Approved,
     Done,
     Rejected,
     Canceled,
@@ -44,7 +43,6 @@ impl Order {
         if retailer.bid_point != self.ask_point {
             return Some(false);
         }
-        self.state = OrderState::Approved;
         return Some(true);
     }
 

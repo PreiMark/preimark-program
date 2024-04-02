@@ -12,6 +12,7 @@ import {
 
 import { ExchangeMarket } from './../target/types/exchange_market'
 import { InitializeOrder, InitializeOffer, OrderAction } from './types'
+import { Connection, Transaction } from '@solana/web3.js'
 
 const PROGRAM_ACCOUNTS = {
   rent: web3.SYSVAR_RENT_PUBKEY,
@@ -25,8 +26,16 @@ export type OrderData = IdlAccounts<ExchangeMarket>['order']
 
 class ExchangeProgram {
   readonly program: Program<ExchangeMarket>
-  constructor(readonly provider: AnchorProvider, readonly programId: string) {
+  constructor(
+    readonly provider: AnchorProvider,
+    readonly programId: string,
+    readonly connection: Connection,
+  ) {
     this.program = workspace.ExchangeMarket as Program<ExchangeMarket>
+  }
+
+  get connect() {
+    return this.connection
   }
 
   get walletPubkey() {
@@ -171,6 +180,7 @@ class ExchangeProgram {
     console.log('_bidMint', _bidMint)
     console.log('bidTreasury', bidTreasury)
     console.log('bidTokenAccount', bidTokenAccount)
+    // Add the initializeOffer method call to the transaction
     const tx = await this.program.methods
       .initializeOffer(bidTotal, bidPoint, startAfter, endAfter)
       .accounts({
@@ -184,10 +194,25 @@ class ExchangeProgram {
       })
       .transaction()
 
+    tx.feePayer = authority
+    const { blockhash, lastValidBlockHeight } =
+      await this.connection.getLatestBlockhash()
+    tx.feePayer = this.walletPubkey
+    tx.recentBlockhash = blockhash
+    tx.lastValidBlockHeight = lastValidBlockHeight
+
     console.log('pass', tx)
     let txId = ''
     if (sendAndConfirm) {
-      txId = await this.provider.sendAndConfirm(tx, [retailer])
+      txId = await this.connection.sendRawTransaction(tx.serialize(), {
+        skipPreflight: true,
+        preflightCommitment: 'confirmed',
+      })
+      await this.connection.confirmTransaction({
+        signature: txId,
+        blockhash,
+        lastValidBlockHeight,
+      })
     }
     return { txId, tx }
   }

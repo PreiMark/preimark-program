@@ -7,11 +7,10 @@ import { expect } from 'chai'
 import { Connection } from '@solana/web3.js'
 import NodeWallet from '@project-serum/anchor/dist/cjs/nodewallet'
 
-describe('sen-exchange-core', () => {
+describe('exchange-market', () => {
   // Configure the client to use the local cluster.
 
   const connection = new Connection('http://localhost:8899', 'confirmed')
-
   const options = AnchorProvider.defaultOptions()
   const wallet = NodeWallet.local()
   const provider = new AnchorProvider(connection, wallet, options)
@@ -23,6 +22,7 @@ describe('sen-exchange-core', () => {
   const LibraryProgram = new ExchangeProgram(
     provider,
     program.programId.toBase58(),
+    connection,
   )
 
   const getRetailerReserve = async (retailer: Address): Promise<string[]> => {

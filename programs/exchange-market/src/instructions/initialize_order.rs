@@ -15,7 +15,7 @@ pub struct InitializeOrder<'info> {
     #[account(init, payer = authority, space = Order::LEN)]
     pub order: Account<'info, Order>,
 
-    // Ask info
+    // Token muon order
     #[account(mut)]
     pub ask_mint: Box<Account<'info, token::Mint>>,
     #[account(

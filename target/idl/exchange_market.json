@@ -349,9 +349,6 @@
             "name": "Open"
           },
           {
-            "name": "Approved"
-          },
-          {
             "name": "Done"
           },
           {
@@ -400,8 +397,5 @@
       "name": "InsufficientFunds",
       "msg": "insufficient funds"
     }
-  ],
-  "metadata": {
-    "address": "CUGAajqCMMGahDnsBKDkcUcejNKB8Jq2tebyje42mtmg"
-  }
+  ]
 }
