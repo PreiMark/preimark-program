@@ -62,16 +62,16 @@ pub fn exec(
         retailer.end_time = 0;
     }
 
-    // retailer.deposit(
-    //     bid_total,
-    //     bid_point,
-    //     ctx.accounts.token_program.to_account_info(),
-    //     token::Transfer {
-    //         from: ctx.accounts.bid_token_account.to_account_info(),
-    //         to: ctx.accounts.bid_treasury.to_account_info(),
-    //         authority: ctx.accounts.authority.to_account_info(),
-    //     },
-    // )?;
+    retailer.deposit(
+        bid_total,
+        bid_point,
+        ctx.accounts.token_program.to_account_info(),
+        token::Transfer {
+            from: ctx.accounts.bid_token_account.to_account_info(),
+            to: ctx.accounts.bid_treasury.to_account_info(),
+            authority: ctx.accounts.authority.to_account_info(),
+        },
+    )?;
 
     Ok(())
 }
