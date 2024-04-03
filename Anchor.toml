@@ -1,10 +1,10 @@
 [features]
 seeds = false
 [programs.localnet]
-exchange_market = "CUGAajqCMMGahDnsBKDkcUcejNKB8Jq2tebyje42mtmg"
+exchange_market = "9B5paEycwyRhg8CeEsr4MUu42jbHYSkVJyGrn8zVQpd9"
 
 [registry]
-url = "https://api.apr.dev"
+url = "https://anchor.projectserum.com"
 
 [provider]
 cluster = "localnet"

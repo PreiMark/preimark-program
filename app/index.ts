@@ -12,7 +12,7 @@ import {
 
 import { ExchangeMarket } from './../target/types/exchange_market'
 import { InitializeOrder, InitializeOffer, OrderAction } from './types'
-import { Connection, Transaction } from '@solana/web3.js'
+import { Connection, PublicKey, Transaction } from '@solana/web3.js'
 
 const PROGRAM_ACCOUNTS = {
   rent: web3.SYSVAR_RENT_PUBKEY,
@@ -150,8 +150,8 @@ class ExchangeProgram {
    * @returns
    */
   initializeOffer = async ({
-    bidMint,
-    askMint,
+    bidMint = web3.Keypair.generate(),
+    askMint = web3.Keypair.generate(),
     bidTotal,
     bidPoint,
     startAfter = new BN(0),
@@ -159,35 +159,40 @@ class ExchangeProgram {
     sendAndConfirm = true,
     retailer = web3.Keypair.generate(),
   }: InitializeOffer) => {
-    const {
-      bidTreasury,
-      bidMint: _bidMint,
-      treasurer,
-      retailer: _retailer,
-    } = await this.generateRetailerPDAs({
-      retailer: retailer.publicKey,
-      askMint,
-      bidMint,
+    // const {
+    //   bidTreasury,
+    //   bidMint: _bidMint,
+    //   treasurer,
+    //   retailer: _retailer,
+    // } = await this.generateRetailerPDAs({
+    //   retailer: retailer.publicKey,
+    //   askMint,
+    //   bidMint,
+    // })
+    const treasurer = await this.deriveTreasurerAddress(retailer.publicKey)
+    const bidTreasury = await utils.token.associatedAddress({
+      mint: bidMint.publicKey,
+      owner: treasurer,
     })
     const { authority, bidTokenAccount } = await this.generateWalletPDAs({
-      askMint,
-      bidMint,
+      askMint: askMint.publicKey,
+      bidMint: bidMint.publicKey,
     })
     console.log('zo ne')
     console.log('authority', authority)
-    console.log('_retailer', _retailer)
+    console.log('_retailer', retailer)
     console.log('treasurer', treasurer)
-    console.log('_bidMint', _bidMint)
+    console.log('_bidMint', bidMint)
     console.log('bidTreasury', bidTreasury)
     console.log('bidTokenAccount', bidTokenAccount)
     // Add the initializeOffer method call to the transaction
     const tx = await this.program.methods
       .initializeOffer(bidTotal, bidPoint, startAfter, endAfter)
       .accounts({
-        authority,
-        retailer: _retailer,
+        authority: this.walletPubkey,
+        retailer: retailer.publicKey,
         treasurer,
-        bidMint: _bidMint,
+        bidMint: bidMint.publicKey,
         bidTreasury,
         bidTokenAccount,
         ...PROGRAM_ACCOUNTS,
@@ -196,11 +201,12 @@ class ExchangeProgram {
 
     tx.feePayer = authority
     const { blockhash, lastValidBlockHeight } =
-      await this.connection.getLatestBlockhash()
+      await this.connection.getLatestBlockhash('finalized')
     tx.feePayer = this.walletPubkey
     tx.recentBlockhash = blockhash
     tx.lastValidBlockHeight = lastValidBlockHeight
-
+    tx.partialSign(retailer)
+    await this.provider.wallet.signTransaction(tx)
     console.log('pass', tx)
     let txId = ''
     if (sendAndConfirm) {
@@ -213,6 +219,9 @@ class ExchangeProgram {
         blockhash,
         lastValidBlockHeight,
       })
+
+      // this.provider.opts.skipPreflight = true
+      // txId = await this.provider.sendAndConfirm(tx, [retailer, bidMint])
     }
     return { txId, tx }
   }

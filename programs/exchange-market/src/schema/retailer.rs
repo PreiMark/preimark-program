@@ -6,9 +6,9 @@ use anchor_lang::prelude::*;
 use anchor_spl::token;
 
 #[account]
-#[derive(Copy)]
 pub struct Retailer {
     pub authority: Pubkey,
+    pub retailer: Pubkey,
     pub bid_mint: Pubkey,
     pub ask_mint: Pubkey,
     pub bid_total: u64,
@@ -21,19 +21,19 @@ impl Retailer {
     pub const LEN: usize =
         DISCRIMINATOR_SIZE + PUBKEY_SIZE * 3 + U64_SIZE * 4 + I64_SIZE * 2 + METADATA_SIZE;
 
-    pub fn check_active<'a, 'b, 'c, 'info>(self) -> Result<()> {
-        let current_time = current_timestamp().unwrap();
-        msg!("current_time {}", current_time);
-        msg!("start_time {}", self.start_time);
-        msg!("end_time {}", self.end_time);
-        if !(current_time >= self.start_time) {
-            return err!(ErrorCode::NotActive);
-        }
-        if self.end_time > 0 && !(current_time < self.end_time) {
-            return err!(ErrorCode::NotActive);
-        }
-        return Ok(());
-    }
+    // pub fn check_active<'a, 'b, 'c, 'info>(self) -> Result<()> {
+    //     let current_time = current_timestamp().unwrap();
+    //     msg!("current_time {}", current_time);
+    //     msg!("start_time {}", self.start_time);
+    //     msg!("end_time {}", self.end_time);
+    //     if !(current_time >= self.start_time) {
+    //         return err!(ErrorCode::NotActive);
+    //     }
+    //     if self.end_time > 0 && !(current_time < self.end_time) {
+    //         return err!(ErrorCode::NotActive);
+    //     }
+    //     return Ok(());
+    // }
 
     pub fn deposit<'a, 'b, 'c, 'info>(
         &mut self,
@@ -46,8 +46,8 @@ impl Retailer {
         let transfer_ctx = CpiContext::new(program, context);
         token::transfer(transfer_ctx, bid_total)?;
         // Update Retailer Info
-        self.bid_total += bid_total;
-        self.bid_point += bid_point;
+        self.bid_total = bid_total;
+        self.bid_point = bid_point;
         Ok(())
     }
 

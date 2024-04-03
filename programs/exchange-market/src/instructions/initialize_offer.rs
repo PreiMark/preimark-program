@@ -17,6 +17,7 @@ pub struct InitializeOffer<'info> {
     // token muon buy/sell
     #[account(mut)]
     pub bid_mint: Box<Account<'info, token::Mint>>,
+
     #[account(
     init_if_needed,
     payer = authority,
@@ -24,6 +25,7 @@ pub struct InitializeOffer<'info> {
     associated_token::authority = treasurer
   )]
     pub bid_treasury: Box<Account<'info, token::TokenAccount>>,
+
     #[account(
     init_if_needed,
     payer = authority,
@@ -52,8 +54,8 @@ pub fn exec(
     retailer.bid_mint = ctx.accounts.bid_mint.key();
 
     // Initialize retailer's info
-    retailer.bid_total += 0;
-    retailer.bid_point += 0;
+    retailer.bid_total = bid_total;
+    retailer.bid_point = bid_point;
 
     retailer.start_time = current_time + start_after;
     retailer.end_time = current_time + end_after;

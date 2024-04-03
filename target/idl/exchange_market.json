@@ -309,6 +309,10 @@
             "type": "publicKey"
           },
           {
+            "name": "retailer",
+            "type": "publicKey"
+          },
+          {
             "name": "bidMint",
             "type": "publicKey"
           },

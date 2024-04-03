@@ -10,13 +10,15 @@ import NodeWallet from '@project-serum/anchor/dist/cjs/nodewallet'
 describe('exchange-market', () => {
   // Configure the client to use the local cluster.
 
-  const connection = new Connection('http://localhost:8899', 'confirmed')
-  const options = AnchorProvider.defaultOptions()
-  const wallet = NodeWallet.local()
-  const provider = new AnchorProvider(connection, wallet, options)
+  const connection = new Connection('http://localhost:8899')
+  // const options = AnchorProvider.defaultOptions()
+  // const wallet = NodeWallet.local()
+  // const provider = new AnchorProvider(connection, wallet, options)
+  // anchor.setProvider(provider)
+  // provider.opts.skipPreflight = true
+  const provider = anchor.AnchorProvider.local()
   anchor.setProvider(provider)
   provider.opts.skipPreflight = true
-
   const program = anchor.workspace.ExchangeMarket as Program<ExchangeMarket>
 
   const LibraryProgram = new ExchangeProgram(
@@ -47,7 +49,7 @@ describe('exchange-market', () => {
   }
 
   // Context
-  const BID_TOTAL = new anchor.BN(0)
+  const BID_TOTAL = new anchor.BN(1000000000)
   const BID_POINT = new anchor.BN(1000)
   const START_AFTER = new anchor.BN(0)
   const END_AFTER = new anchor.BN(10000)
@@ -81,9 +83,9 @@ describe('exchange-market', () => {
     console.log('RETAILER', RETAILER.publicKey)
     console.log('BID_POINT', BID_POINT)
     console.log('END_AFTER', END_AFTER)
-    const { tx } = await LibraryProgram.initializeOffer({
-      askMint: BID_MINT.publicKey,
-      bidMint: BID_MINT.publicKey,
+    const { txId } = await LibraryProgram.initializeOffer({
+      askMint: BID_MINT,
+      bidMint: BID_MINT,
       retailer: RETAILER,
       bidPoint: BID_POINT,
       bidTotal: BID_TOTAL,
@@ -91,7 +93,7 @@ describe('exchange-market', () => {
       startAfter: START_AFTER,
     })
 
-    console.log('txId', tx)
+    console.log('txId', txId)
     // Validate retailer data
     const retailerData = await program.account.retailer.fetch(
       RETAILER.publicKey,

@@ -42,8 +42,6 @@ pub struct InitializeOrder<'info> {
 pub fn exec(ctx: Context<InitializeOrder>, ask_point: u64, ask_amount: u64) -> Result<()> {
     let retailer = ctx.accounts.retailer.clone();
     let order = &mut ctx.accounts.order;
-    // Validate
-    retailer.check_active()?;
     // Initialize order's info
     order.authority = ctx.accounts.authority.key();
     order.retailer = retailer.key();

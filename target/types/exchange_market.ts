@@ -309,6 +309,10 @@ export type ExchangeMarket = {
             "type": "publicKey"
           },
           {
+            "name": "retailer",
+            "type": "publicKey"
+          },
+          {
             "name": "bidMint",
             "type": "publicKey"
           },
@@ -708,6 +712,10 @@ export const IDL: ExchangeMarket = {
         "fields": [
           {
             "name": "authority",
+            "type": "publicKey"
+          },
+          {
+            "name": "retailer",
             "type": "publicKey"
           },
           {

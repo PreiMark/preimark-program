@@ -1,8 +1,8 @@
 import { web3, BN, Address } from '@project-serum/anchor'
 
 export type InitializeOffer = {
-  bidMint: Address
-  askMint: Address
+  bidMint: web3.Keypair
+  askMint: web3.Keypair
   bidTotal: BN
   bidPoint: BN
   startAfter?: BN
